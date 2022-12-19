@@ -1,8 +1,12 @@
 # Getting Started with Create React App
 
-#if you do not install node.js,  https://nodejs.org/en/
+# if you do not install node.js,  https://nodejs.org/en/
 
-#open terminal under project folder, install react: ###npm install react-scripts --save
+# open terminal under project folder, enter following commands:
+
+### npm install react-scripts --save
+
+install react
 
 ### `npm run build`
 

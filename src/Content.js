@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getApps, getCapabilities, getDevices, getLocations, getPreferences, getRoom, getRooms, getRules, getScenes, postRule } from './utils';
-import { List, Table, Input, message, Form, Button} from 'antd';
+import { deleteRule, getApps, getCapabilities, getDevices, getLocations, getPreferences, getRoom, getRooms, getRules, getScenes, parseRule, postRule } from './utils';
+import { List, Table, Input, message, Form, Button, Modal} from 'antd';
 const Locations = (props) => {
     const [locations, setLocations] = useState();
     useEffect(() => {
@@ -62,6 +62,7 @@ const Rooms = (props) => {
 }
 const Rules = (props) => {
   const [rules, setRules] = useState()
+  const [isModalOpen, setIsModalOpen] = useState(false)
   useEffect(() => {
     getRules(props.token, props.locationId)
     .then((rules) => {setRules(rules)}).catch((err) =>
@@ -69,13 +70,29 @@ const Rules = (props) => {
   }, []);
   var data = [];
   for (var i in rules?.items) {
-    data.push({rule: rules.items[i]});
+    data.push(parseRule(rules.items[i]))
   }
   return     <>
       <List
         bordered
         dataSource={data}
-        renderItem={item => <List.Item>{JSON.stringify(item)}</List.Item>}
+        renderItem={item => <>
+          <div><h3>Name</h3>{item.name}</div>
+          <div><h3>RuleId</h3>{item.id}</div>
+          <div><h3>OwnerId</h3>{item.ownerId}</div>
+          <div><h3>Action</h3>{item.action}</div>
+          <div><h3>ConditionName</h3>{item.conditionName}</div>
+          <div><h3>Condition</h3>{item.condition}</div>
+          <div><h3>TriggerDevice</h3>{item.triggerDevice}</div>
+          <div><h3>TriggerEvent</h3>{item.triggerEvent}</div>
+          <div><h3>Result</h3>{item.result}</div>
+          <div><h3>ActionDevice</h3>{item.actionDevice}</div>
+          <div><h3>ActionEvent</h3>{item.actionEvent}</div>
+          <a onClick={() => setIsModalOpen(true)}>Raw Log</a>
+          <Modal title="Raw Log" open={isModalOpen} onCancel={() => setIsModalOpen(false)}footer={null}>
+              {JSON.stringify(item.rule)}
+          </Modal>
+        </>}
       />
     </>
 }
@@ -105,6 +122,39 @@ const PostRule = (props) => {
             rules={[{ required: true, message: 'Please input rule' }]}
           >
             <Input.TextArea autoSize={{minRows: 6}}/>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={loading}>Submit</Button>
+          </Form.Item>
+        </Form>
+}
+
+const DeleteRule = (props) => {
+  const [loading, setLoading] = useState(false);
+   const onFinish = async (value) => {
+    setLoading(true);
+    try {
+      await deleteRule(props.token, value.ruleId, value.locationId);
+      message.success("post successfully");
+    } catch (error) {
+    message.error(error.message);
+  } finally {
+    setLoading(false);
+  }}
+  return  <Form name="deleteRule" onFinish={onFinish}>
+          <Form.Item
+              label="ruleId"
+              name="ruleId"
+              rules={[{ required: true, message: 'Please input ruleId' }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+            label="locationId"
+            name="locationId"
+            rules={[{ required: true, message: 'Please input locationId' }]}
+          >
+            <Input />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>Submit</Button>
@@ -293,7 +343,6 @@ const Apps = (props) => {
   return (<Table dataSource={dataSource} columns={columns} pagination={false} />);
 }
 const Data = (props) => {
-    const key = props.name;
     const token = props.token;
     return (<>
           <h2>Locations</h2>
@@ -302,6 +351,8 @@ const Data = (props) => {
           <Devices token={token}/>
           <h2>Post Rule</h2>
           <PostRule token={token} />
+          <h2>Delete Rule</h2>
+          <DeleteRule token={token} />
           <h2>Preferences</h2>
           <Preferences token={token}/>
           <h2>Scenes</h2>
